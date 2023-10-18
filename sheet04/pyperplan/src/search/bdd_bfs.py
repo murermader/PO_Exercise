@@ -71,6 +71,22 @@ class BDDSearch(object):
         b = self.transition_relation
 
         # TODO add your code for exercise 4.1(a) here.
+        # RB:
+        # This should be the apply function po-c07.pdf
+        b = bdd_intersection(b, reached)
+
+        for v in self.task.facts:
+            # RB:
+            # Do we need to make sure to only select v and not v'?
+            # I am confused about the difference between them...
+            b = bdd_forget(b, v)
+
+        for v_prime in self.task.facts:
+            # RB:
+            # Get reference to v? Should we store its name before forgetting it?
+            # maybe something like this?
+            # b = bdd_rename(b, v_prime, ...)
+            ...
 
         # Return a BDD that represents the set of states that can be
         # reached in one step from the states represented by the BDD
@@ -98,6 +114,17 @@ class BDDSearch(object):
         reached = [bdd_state(self.state_to_ids(self.task.initial_state))]
 
         # TODO add your code for exercise 4.1(a) here.
+        i = 0
+        while True:
+            intersection = bdd_intersection(reached[i], goal)
+            if not bdd_isempty(intersection):
+                return self.construct_plan(reached)  # Solution!
+
+            reached_next = bdd_union(reached[i], self.apply_ops(reached[i]))
+            reached.append(reached_next)
+            if bdd_equals(reached[i+1], reached[i]):
+                return None  # No solution exists
+            i += 1
 
         # Create new BDDs with self.apply_ops(reached[i]) and append
         # them to the list "reached" in each step.
