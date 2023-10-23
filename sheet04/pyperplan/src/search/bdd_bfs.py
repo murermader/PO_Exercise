@@ -41,10 +41,10 @@ class BDDSearch(object):
     def get_atom_bdd(self, fact, primed):
         return bdd_atom(self.get_fact_id(fact, primed))
 
-    def conjunction_to_set(self, conjunction):
+    def conjunction_to_set(self, conjunction, primed=False):
         b = one()
         for fact in conjunction:
-            fact_bdd = self.get_atom_bdd(fact, False)
+            fact_bdd = self.get_atom_bdd(fact, primed)
             b = bdd_intersection(b, fact_bdd)
         return b
 
