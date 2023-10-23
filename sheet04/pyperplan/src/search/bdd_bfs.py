@@ -52,7 +52,6 @@ class BDDSearch(object):
         t = zero()
 
         # TODO add your code for exercise 4.1(a) here.
-
         # Note that the task is in STRIPS, so the formula for
         # the transition relation can be simplified to the conjunction
         # of the following formulas:
@@ -60,6 +59,30 @@ class BDDSearch(object):
         #   {v' | v in op.add_effects}
         #   {not v' | v in op.del_effects \ op.add_effects}
         #   {v <-> v' | v in self.task.facts \ op.del_effects \ op.add_effects}
+        for op in self.task.operators:
+            bdd1 = self.conjunction_to_set(op.preconditions)
+            bdd2 = self.conjunction_to_set(op.add_effects, True)  # I added the primed parameter to the function
+            bdd3 = one()
+            bdd4 = one()
+
+            for fact in op.del_effects:
+                if fact in op.add_effects:
+                    continue
+                atom = self.get_atom_bdd(fact, True)
+                not_v_prime = bdd_complement(atom)
+                bdd3 = bdd_intersection(bdd3, not_v_prime)
+
+            for fact in self.task.facts:
+                if fact in op.del_effects or fact in op.add_effects:
+                    continue
+
+                v = self.get_atom_bdd(fact, False)
+                v_prime = self.get_atom_bdd(fact, True)
+                b = bdd_biimplication(v, v_prime)
+                bdd4 = bdd_intersection(bdd4, b)
+
+            op_bdd = bdd_intersection(bdd_intersection(bdd1, bdd2), bdd_intersection(bdd3, bdd4))
+            t = bdd_union(t, op_bdd)
 
         # To get the BDD representing a fact, use self.get_atom_bdd.
         # To construct BDDs, use the functions imported from bdd.py.
@@ -71,22 +94,11 @@ class BDDSearch(object):
         b = self.transition_relation
 
         # TODO add your code for exercise 4.1(a) here.
-        # RB:
-        # This should be the apply function po-c07.pdf
         b = bdd_intersection(b, reached)
-
-        for v in self.task.facts:
-            # RB:
-            # Do we need to make sure to only select v and not v'?
-            # I am confused about the difference between them...
-            b = bdd_forget(b, v)
-
-        for v_prime in self.task.facts:
-            # RB:
-            # Get reference to v? Should we store its name before forgetting it?
-            # maybe something like this?
-            # b = bdd_rename(b, v_prime, ...)
-            ...
+        for fact in self.task.facts:
+            b = bdd_forget(b, self.get_atom_bdd(fact, False))
+        for fact in self.task.facts:
+            b = bdd_rename(b, self.get_atom_bdd(fact, True), self.get_atom_bdd(fact, False))
 
         # Return a BDD that represents the set of states that can be
         # reached in one step from the states represented by the BDD
