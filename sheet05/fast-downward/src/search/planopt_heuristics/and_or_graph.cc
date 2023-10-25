@@ -74,6 +74,68 @@ void AndOrGraph::most_conservative_valuation() {
       TODO: add your code for exercise 5.3(a) here. Ignore the members
       direct_cost, additive_cost, and achiever for now.
     */
+	std::set<NodeID> visited;    
+
+    for (; !queue.empty(); queue.pop_front()){
+        // get node
+        NodeID currentNodeID = queue.front();
+        AndOrGraphNode& node = nodes[currentNodeID]; //get_node(currentNodeID);
+        cout << "Get node from queue: " << node.id << " (num_forced_successors=" << node.num_forced_successors << ")" << endl;
+        visited.insert(currentNodeID);
+
+        // set force_true if
+        //   - OR node && at least 1 successor is true
+        //   - AND node && no successors
+        //   - AND ndoe && all successors are true
+        auto setForceTrue = false;
+        if(node.type == NodeType::OR){
+            setForceTrue = node.num_forced_successors > 0;
+        }
+        if(node.type == NodeType::AND){
+            if(node.successor_ids.empty()){
+                setForceTrue = true;
+            } else {
+                setForceTrue = node.successor_ids.size() == node.num_forced_successors;
+            }            
+        }
+
+        // if force_true
+        //   - increase num_forced_successors on predecessors by one
+        //   - if predecessor force_true = True -> add to queue.
+        if(setForceTrue){
+            cout << "Set force_true = true" << endl;
+            node.forced_true = true;
+
+            for (NodeID &predecessorId : node.predecessor_ids) {
+                if(visited.find(predecessorId) != visited.end()){
+                    // Node has already been visited
+                    cout << "Skip " << node.id << " because it has already been visited" << endl;
+                    continue;
+                }
+
+                AndOrGraphNode& predecessor = nodes[predecessorId]; //get_node(predecessorId);
+                predecessor.num_forced_successors = predecessor.num_forced_successors + 1;
+                cout << "Predecessor " << predecessor.id << ": Updated num_forced_successors to " << predecessor.num_forced_successors << endl;
+
+                auto setPredecessorForceTrue = false;
+                if(predecessor.type == NodeType::OR){
+                    setPredecessorForceTrue = predecessor.num_forced_successors > 0;
+                }
+                if(predecessor.type == NodeType::AND){
+                    if(predecessor.successor_ids.empty()){
+                        setPredecessorForceTrue = true;
+                    } else {
+                        setPredecessorForceTrue = predecessor.successor_ids.size() == predecessor.num_forced_successors;
+                    }            
+                }
+
+                if(setPredecessorForceTrue){
+                    cout << "Push " << predecessor.id << " into queue (should be force_true)" << endl;
+                    queue.push_back(predecessor.id);
+                }
+            }
+        }
+    }
 }
 
 void AndOrGraph::weighted_most_conservative_valuation() {
