@@ -56,11 +56,91 @@ void RelaxedTaskGraph::change_initial_state(const State &state) {
 }
 
 bool RelaxedTaskGraph::is_goal_relaxed_reachable() {
+    cout << "initial_node_id=" << initial_node_id << endl;
+    cout << "goal_node_id=" << goal_node_id << endl;
+    cout << "nodes in total =" << variable_node_ids.size() << endl;
+
+    // Initialize reachable HashMap
+    for(Proposition proposition : relaxed_task.propositions){
+        cout << "Proposition ID=" << proposition.id << " and name=" << proposition.name << endl;
+    }
+
+    using HashMap = utils::HashMap<NodeID, bool>;
+    HashMap reachable;
+
+    // Initialize reachable HashMap
+    for(NodeID nodeID : variable_node_ids){
+        AndOrGraphNode node = graph.get_node(nodeID);
+
+        if(nodeID == initial_node_id){
+            reachable[nodeID] = true;
+            cout << "Node " << nodeID << " reachable=true" << endl;
+        } else {
+            reachable[nodeID] = false;
+            cout << "Node " << nodeID << " reachable=false" << endl;
+        }
+    }
+
     /* Compute the most conservative valuation of the graph and use it
-       to return true iff the goal is reachable in the relaxed task. */
+    to return true iff the goal is reachable in the relaxed task. */
 
     // TODO: add your code for exercise 5.3(b) here.
-    return false;
+
+
+    int currentNodeID = 0;
+    int lastChangedNodeID = -1;
+    int iterations = 30;
+
+    while(true){
+        AndOrGraphNode currentNode = graph.get_node(currentNodeID);
+
+        if(currentNodeID == lastChangedNodeID){
+            // We have reached a fixed point. Since changing the reachability of this node,
+            // no other node has been changed.
+            cout << "Node " << currentNodeID << "BREAK: Fixed point reached" << endl;
+            break;
+        }
+
+        bool isCurrentNodeReachable = false;
+        if(currentNode.type == NodeType::AND){
+            // All successors have to be reachable
+            isCurrentNodeReachable = true;
+            for (NodeID successorNodeID : currentNode.successor_ids){
+                if(reachable[successorNodeID] == false){
+                    isCurrentNodeReachable = false;
+                    break;
+                }
+            }
+        } else {
+            // At least one successor has to be reachable
+            for (NodeID successorNodeID : currentNode.successor_ids){
+                if(reachable[successorNodeID] == true){
+                    isCurrentNodeReachable = true;
+                    break;
+                }
+            }
+        }
+
+        if(isCurrentNodeReachable){
+            cout << "Node " << currentNodeID << "set reachable=true and set lastChangedNodeID=" << lastChangedNodeID << endl;
+            reachable[currentNodeID] = true;
+            lastChangedNodeID = currentNodeID;
+        }
+        
+        // Cycle through node IDs
+        currentNodeID = (currentNodeID + 1) % variable_node_ids.size();
+        cout << "Next Node " << currentNodeID << endl;
+
+        iterations += 1;
+        if(iterations >= 50){
+            cout << "BREAK: Iteration Limit reached" << endl;
+            break;
+        }
+    }
+    
+    bool is_goal_reachable = reachable[initial_node_id];
+    cout << "is_goal_relaxed_reachable=" << is_goal_reachable << endl;
+    return is_goal_reachable;
 }
 
 int RelaxedTaskGraph::additive_cost_of_goal() {
