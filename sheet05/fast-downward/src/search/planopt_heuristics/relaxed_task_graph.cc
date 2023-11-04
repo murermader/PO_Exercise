@@ -148,7 +148,10 @@ int RelaxedTaskGraph::additive_cost_of_goal() {
        use it to return the h^add value of the goal node. */
 
     // TODO: add your code for exercise 5.3(d) here.
-    return -1;
+    graph.weighted_most_conservative_valuation();
+    AndOrGraphNode node = graph.get_node(goal_node_id);
+    //cout << "Goal Node ID: " << goal_node_id << endl;
+    return node.additive_cost;
 }
 
 int RelaxedTaskGraph::ff_cost_of_goal() {
