@@ -164,6 +164,79 @@ void AndOrGraph::weighted_most_conservative_valuation() {
     /*
       TODO: add your code for exercise 5.3(c) here.
     */
+    // Create a priority queue for nodes based on their cost
+    const int INF = std::numeric_limits<int>::max();
+    std::priority_queue<std::pair<int, NodeID>, std::vector<std::pair<int, NodeID>>, std::greater<std::pair<int, NodeID>>> priorityQueue;
+
+    for (AndOrGraphNode &node : nodes) {
+        // All nodes get a cost of INF
+        node.additive_cost = INF;
+
+        // Except if they are initially reachable.
+        if (node.type == NodeType::AND && node.successor_ids.empty()) {
+            node.additive_cost = 0;
+            priorityQueue.push({ node.additive_cost, node.id });
+            // cout << "Add node " << node.id << " to queue with cost " << node.additive_cost << endl;
+        }
+    }
+
+    while (!priorityQueue.empty()){
+        NodeID currentID = priorityQueue.top().second;
+        priorityQueue.pop();
+        AndOrGraphNode& currentNode = nodes[currentID];
+        // cout << "Get node " << currentNode.id << " from queue with cost " << currentNode.additive_cost << endl;
+
+        // Current node is reachable. Check if predecessors are also reachable.
+        for (NodeID &predecessorId : currentNode.predecessor_ids) {
+            AndOrGraphNode& currentPredecessor = nodes[predecessorId];
+
+            // New cost for the node. Update differently depending on if AND or OR node.
+            int newCost = INF;
+
+            // newCost is smallest cost of successor + direct cost. Try all of them and take the smallest
+            if (currentPredecessor.type == NodeType::OR) {
+                for (NodeID &successorId : currentPredecessor.successor_ids) {
+                    AndOrGraphNode& successor = nodes[successorId];
+                    int newMinCost = std::min(successor.additive_cost + currentPredecessor.direct_cost, newCost);
+                    if(newMinCost < newCost){
+                        newCost = newMinCost;
+                    }
+                }
+            }   
+            
+            if (currentPredecessor.type == NodeType::AND) {
+                // 1. Figure out of node is reachable (= no successor has infinte cost)
+                bool isForcedTrue = true;
+                for (NodeID &successorId : currentPredecessor.successor_ids) {
+                    AndOrGraphNode& successor = nodes[successorId];
+                    if(successor.additive_cost == INF){
+                        isForcedTrue = false;
+                        break;
+                    }
+                }
+                
+                // 2. If reachable, calculate cost.
+                if(isForcedTrue){
+                    newCost = currentPredecessor.direct_cost;
+                    for (NodeID &successorId : currentPredecessor.successor_ids) {
+                        AndOrGraphNode& successor = nodes[successorId];
+
+                        // Pessimistic approach: We calculate h_add, because we take the sum of all predecessors. We have to change
+                        // this to MAX instead of SUM if we want to calculate the optimistic h_max.
+                        // like this: new_cost = std::max(new_cost, successor.additive_cost);
+                        newCost += successor.additive_cost;
+                    }
+                }
+            }  
+
+            // Add back to queue if new cost is smaller than old cost
+            if(newCost < currentPredecessor.additive_cost){
+                // cout << currentPredecessor.id << ": New cost of " << newCost << " is smaller than old cost of " << currentPredecessor.additive_cost << endl;
+                currentPredecessor.additive_cost = newCost;
+                priorityQueue.push({ newCost, currentPredecessor.id });
+            }
+        }
+    }
 }
 
 void add_nodes(vector<string> names, NodeType type, AndOrGraph &g, unordered_map<string, NodeID> &ids) {
