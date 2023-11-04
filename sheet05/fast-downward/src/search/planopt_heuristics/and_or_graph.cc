@@ -95,7 +95,7 @@ void AndOrGraph::most_conservative_valuation() {
             if(node.successor_ids.empty()){
                 setForceTrue = true;
             } else {
-                setForceTrue = node.successor_ids.size() == node.num_forced_successors;
+                setForceTrue = node.successor_ids.size() <= node.num_forced_successors;
             }            
         }
 
@@ -125,7 +125,7 @@ void AndOrGraph::most_conservative_valuation() {
                     if(predecessor.successor_ids.empty()){
                         setPredecessorForceTrue = true;
                     } else {
-                        setPredecessorForceTrue = predecessor.successor_ids.size() == predecessor.num_forced_successors;
+                        setPredecessorForceTrue = predecessor.successor_ids.size() <= predecessor.num_forced_successors;
                     }            
                 }
 
