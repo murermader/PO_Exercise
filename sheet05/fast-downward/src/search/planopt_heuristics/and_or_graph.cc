@@ -223,7 +223,7 @@ void AndOrGraph::weighted_most_conservative_valuation() {
 
                         // Pessimistic approach: We calculate h_add, because we take the sum of all predecessors. We have to change
                         // this to MAX instead of SUM if we want to calculate the optimistic h_max.
-                        // like this: new_cost = std::max(new_cost, successor.additive_cost);
+                        // like this: new_cost = std::max(new_cost, successor.additive_cost + currentPredecessor.direct_cost);
                         newCost += successor.additive_cost;
                     }
                 }
